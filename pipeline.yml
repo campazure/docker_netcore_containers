@@ -1,0 +1,60 @@
+name: 0.$(Rev:rr)
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    exclude:
+    - readme.md
+stages:
+- stage: CI
+  displayName: Continuous Integration 
+  jobs:
+  - job: buildpptx
+    displayName: Build presentation deck
+    pool:
+      vmImage: ubuntu-latest
+    container:
+      image: seesharprun/campazure:latest
+    steps:
+    - script: cp /theme.pptx .
+      workingDirectory: $(Build.SourcesDirectory)/presentation 
+      displayName: Copy resource files
+    - script: pandoc readme.md --from markdown --to pptx --slide-level 2 --self-contained --reference-doc theme.pptx --output $(Build.ArtifactStagingDirectory)/presentation-$(Build.BuildNumber).pptx
+      workingDirectory: $(Build.SourcesDirectory)/presentation 
+      displayName: Build presentation file from Markdown content
+    - task: PublishBuildArtifacts@1
+      displayName: Publish presentation file build artifact
+      inputs:
+        pathtoPublish: $(Build.ArtifactStagingDirectory)
+        artifactName: deck
+- stage: CD
+  displayName: Continuous Deployment
+  dependsOn: CI
+  condition: succeeded('CI')
+  jobs:
+  - job: publishpptx
+    displayName: Publish course content
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: Download presentation build artifact
+      inputs:
+        buildType: current
+        downloadType: single
+        artifactName: deck
+        downloadPath: $(Build.SourcesDirectory)/out
+    - task: GitHubRelease@0
+      displayName: Create GitHub release
+      inputs:
+        gitHubConnection: seesharprun-github
+        repositoryName: $(Build.Repository.Name)
+        tagSource: manual
+        tag: v$(Build.BuildNumber)
+        title: Version $(Build.BuildNumber)
+        releaseNotesSource: input
+        releaseNotes: # Version $(Build.BuildNumber) Release
+        assets: $(Build.SourcesDirectory)/out/**/*.*
+        assetUploadMode: replace
+        isPreRelease: true
