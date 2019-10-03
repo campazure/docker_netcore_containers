@@ -1,4 +1,4 @@
-% Docker, .NET Core, and Azure DevOps; Oh My!
+% Workshop: Docker, .NET Core, and Azure DevOps
 % Sidney Andrews
 % October 3, 2019
 
