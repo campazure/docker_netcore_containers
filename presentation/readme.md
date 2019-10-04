@@ -196,7 +196,7 @@ docker images
 
 # List specific images
 
-docker iamges ubuntu
+docker images ubuntu
 ```
 
 ## Searching for images
