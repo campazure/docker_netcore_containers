@@ -523,14 +523,14 @@ dotnet publish --configuration Release --output out --self-contained
 ## Pulling and running a .NET Core image
 
 ```
-# Pull a .NET Core 3.0 SDK image from Docker Hub
-docker pull mcr.microsoft.com/dotnet/core/sdk:3.0
+# Pull a .NET Core 3.1 SDK image from Docker Hub
+docker pull mcr.microsoft.com/dotnet/core/sdk:3.1
 
 
 
 # Run this container in detached mode
 
-docker run --detach --tty mcr.microsoft.com/dotnet/core/sdk:3.0 
+docker run --detach --tty mcr.microsoft.com/dotnet/core/sdk:3.1 
 ```
 
 ## Copy project files
@@ -586,7 +586,7 @@ docker cp $(docker ps --latest --quiet):/home/appname/outputfolder .
 ## .NET Core Dockerfile
 
 ```
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1
 
 WORKDIR /app
 
@@ -609,7 +609,7 @@ ENTRYPOINT ["dotnet", "out/Demo.Client.dll"]
 ## .NET Core Dockerfile with optimizations
 
 ```
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 WORKDIR /app
 
@@ -672,28 +672,11 @@ using Microsoft.AspNetCore.Http;
 
 public class Startup
 {
-    string css = @"<link rel=""stylesheet"" href=""https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"">";
-    string title = "Hey .NET User Group!";
-
     public void Configure(IApplicationBuilder app) =>
         app.Run(context =>
-            context.Response.WriteAsync($@"
-                <html>
-                    <head>
-                        {css}
-                    </head>
-                    <body>
-                        <nav class=""navbar navbar-dark bg-info mb-4"">
-                            <span class=""navbar-brand mb-0 h1"">.NET Core on Docker</span>
-                        </nav>
-                        <main class=""container"">                        
-                            <h1 class=""display-1"">
-                                {title}
-                            </h1>
-                        </main>
-                    </body>
-                </html>
-            ")
+            context.Response.WriteAsync(
+                $@"<html><body><h1>Hello World</h1></body></html>"
+            )
         );
 }
 ```
@@ -701,15 +684,21 @@ public class Startup
 ## Web application dockerfile
 
 ```
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
-WORKDIR /web
+WORKDIR /app
 
 COPY . ./
 
-RUN dotnet publish --output site --configuration Release
+RUN dotnet publish --output out --configuration Release
 
-ENTRYPOINT ["dotnet", "site/Demo.Web.dll"]
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+
+WORKDIR /web
+
+COPY --from=build /app/out .
+
+ENTRYPOINT [ "dotnet", "Demo.Web.dll" ]
 ```
 
 ## Running web applications
@@ -819,7 +808,7 @@ steps:
 
 ```
 container:
-  image: mcr.microsoft.com/dotnet/core/sdk:3.0
+  image: mcr.microsoft.com/dotnet/core/sdk:3.1
 ```
 
 # Demo: *Adding Docker to a basic YAML build pipeline*
